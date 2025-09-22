@@ -1,0 +1,125 @@
+import { Navbar } from "@/components/navbar";
+import { SplineScene } from "@/components/spline-scene";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { useLocation } from "wouter";
+import { Search, Shield, Zap, Users } from "lucide-react";
+
+export default function HomePage() {
+  const [, setLocation] = useLocation();
+
+  const features = [
+    {
+      icon: <Search className="h-8 w-8" />,
+      title: "Smart Search",
+      description: "Advanced search filters to find your lost items quickly"
+    },
+    {
+      icon: <Shield className="h-8 w-8" />,
+      title: "AI Verification",
+      description: "Secure claim verification using advanced AI technology"
+    },
+    {
+      icon: <Zap className="h-8 w-8" />,
+      title: "Fast Matching",
+      description: "Instant notifications when potential matches are found"
+    },
+    {
+      icon: <Users className="h-8 w-8" />,
+      title: "Community",
+      description: "Connect with helpful community members"
+    }
+  ];
+
+  return (
+    <div className="min-h-screen bg-background text-foreground">
+      <Navbar />
+      
+      {/* Hero Section */}
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+        <div className="absolute inset-0 bg-gradient-to-b from-blue-500/10 to-transparent">
+          <SplineScene />
+        </div>
+        <div className="relative z-10 text-center max-w-4xl mx-auto px-4">
+          <div className="bg-card/80 backdrop-blur-md rounded-2xl p-8 border border-border">
+            <h1 className="text-5xl md:text-7xl font-bold mb-6 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+              Lost & Found
+            </h1>
+            <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-2xl mx-auto">
+              AI-powered platform to reunite you with your lost belongings
+            </p>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button 
+                size="lg" 
+                className="shiny-button text-lg font-semibold"
+                onClick={() => setLocation("/report")}
+                data-testid="button-report-lost"
+              >
+                Report Lost Item
+              </Button>
+              <Button 
+                size="lg" 
+                className="shiny-button text-lg font-semibold"
+                onClick={() => setLocation("/report")}
+                data-testid="button-report-found"
+              >
+                Report Found Item
+              </Button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto">
+        <div className="text-center mb-12">
+          <h2 className="text-4xl font-bold mb-4">Why Choose Lost & Found?</h2>
+          <p className="text-xl text-muted-foreground">Advanced technology meets human compassion</p>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {features.map((feature, index) => (
+            <Card key={index} className="bg-card border-border hover:border-blue-500/50 transition-colors">
+              <CardContent className="p-6 text-center">
+                <div className="w-16 h-16 bg-blue-500/20 rounded-full flex items-center justify-center mx-auto mb-4 text-blue-400">
+                  {feature.icon}
+                </div>
+                <h3 className="text-xl font-semibold mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground">{feature.description}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
+
+      {/* Call to Action */}
+      <section className="py-20 px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto text-center">
+        <div className="bg-card rounded-2xl p-12 border border-border">
+          <h2 className="text-3xl font-bold mb-4">Ready to Get Started?</h2>
+          <p className="text-xl text-muted-foreground mb-8">
+            Join thousands of users who have successfully reunited with their belongings
+          </p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button 
+              size="lg" 
+              className="shiny-button"
+              onClick={() => setLocation("/browse")}
+              data-testid="button-browse-items"
+            >
+              Browse Lost Items
+            </Button>
+            <Button 
+              size="lg" 
+              variant="outline" 
+              className="border-border"
+              onClick={() => setLocation("/dashboard")}
+              data-testid="button-view-dashboard"
+            >
+              View Dashboard
+            </Button>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}
