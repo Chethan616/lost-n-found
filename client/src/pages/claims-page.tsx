@@ -21,8 +21,9 @@ export default function ClaimsPage() {
     enabled: !!user?.id,
   });
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
+  const getStatusIcon = (status: string | null) => {
+    const statusValue = status || "pending";
+    switch (statusValue) {
       case "approved":
         return <CheckCircle className="h-4 w-4 text-green-400" />;
       case "rejected":
@@ -34,8 +35,9 @@ export default function ClaimsPage() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
+  const getStatusColor = (status: string | null) => {
+    const statusValue = status || "pending";
+    switch (statusValue) {
       case "approved":
         return "bg-green-500/20 text-green-400";
       case "rejected":
@@ -47,20 +49,34 @@ export default function ClaimsPage() {
     }
   };
 
-  const formatStatus = (status: string) => {
-    switch (status) {
+  const formatStatus = (status: string | null) => {
+    const statusValue = status || "pending";
+    switch (statusValue) {
       case "manual_review":
         return "Manual Review";
       default:
-        return status.charAt(0).toUpperCase() + status.slice(1);
+        return statusValue.charAt(0).toUpperCase() + statusValue.slice(1);
     }
   };
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-background flex relative">
+      {/* Spline Background */}
+      <div className="absolute inset-0 z-0">
+        <iframe 
+          src='https://my.spline.design/claritystream-H2XMbAwzgCJFmP5MugBJIizs/' 
+          frameBorder='0' 
+          width='100%' 
+          height='100%'
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 w-full">
+        <Navbar />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-4">AI-Powered Claim Verification</h1>
           <p className="text-xl text-muted-foreground">Secure and intelligent item verification system</p>
@@ -179,6 +195,7 @@ export default function ClaimsPage() {
             </Card>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

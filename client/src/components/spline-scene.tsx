@@ -10,8 +10,6 @@ export function SplineScene() {
         frameBorder="0" 
         width="100%" 
         height="100%"
-        className="rounded-3xl"
-        title="ClarityStream 3D Background"
       />
     </div>
   );

@@ -29,7 +29,7 @@ export function Navbar() {
   };
 
   return (
-    <nav className="border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-50">
+    <nav className="border-b border-border/20 glass-card sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -66,7 +66,7 @@ export function Navbar() {
                     <span className="hidden sm:inline">{user.username}</span>
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
+                <DropdownMenuContent align="end" className="w-48 glass-card">
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard" className="w-full" data-testid="user-menu-dashboard">
                       Dashboard
@@ -85,7 +85,7 @@ export function Navbar() {
               </DropdownMenu>
             ) : (
               <Link href="/auth">
-                <Button size="sm" className="shiny-button" data-testid="nav-sign-in">
+                <Button size="sm" className="glass-shiny-button" data-testid="nav-sign-in">
                   Sign In
                 </Button>
               </Link>
@@ -106,7 +106,7 @@ export function Navbar() {
 
         {/* Mobile Navigation */}
         {isMobileMenuOpen && (
-          <div className="md:hidden py-4 border-t border-border">
+          <div className="md:hidden py-4 border-t border-border/20 glass-light">
             <div className="space-y-2">
               {navigation.map((item) => (
                 <Link

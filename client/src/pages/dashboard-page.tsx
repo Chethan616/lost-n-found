@@ -97,10 +97,23 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-background flex relative">
+      {/* Spline Background */}
+      <div className="absolute inset-0 z-0">
+        <iframe 
+          src='https://my.spline.design/claritystream-H2XMbAwzgCJFmP5MugBJIizs/' 
+          frameBorder='0' 
+          width='100%' 
+          height='100%'
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 w-full">
+        <Navbar />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
           <h1 className="text-4xl font-bold mb-2">Your Dashboard</h1>
           <p className="text-xl text-muted-foreground">Track your reports and claims</p>
@@ -215,6 +228,7 @@ export default function DashboardPage() {
             </Card>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );

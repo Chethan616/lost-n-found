@@ -92,7 +92,9 @@ export default function ReportPage() {
     
     // Add form fields
     Object.entries(data).forEach(([key, value]) => {
-      formData.append(key, value);
+      if (value !== null && value !== undefined) {
+        formData.append(key, value.toString());
+      }
     });
     
     // Add file if selected
@@ -144,29 +146,41 @@ export default function ReportPage() {
   );
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">Report an Item</h1>
-          <p className="text-xl text-muted-foreground">Help reunite items with their owners</p>
-        </div>
+    <div className="min-h-screen bg-background relative">
+      {/* Spline Background */}
+      <div className="absolute inset-0 z-0">
+        <iframe 
+          src='https://my.spline.design/claritystream-H2XMbAwzgCJFmP5MugBJIizs/' 
+          frameBorder='0' 
+          width='100%' 
+          height='100%'
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/60 via-transparent to-black/60"></div>
+      </div>
 
-        <Tabs defaultValue="lost" className="max-w-4xl mx-auto">
-          <TabsList className="grid w-full grid-cols-2 mb-8">
-            <TabsTrigger value="lost" className="flex items-center gap-2" data-testid="tab-lost">
-              <AlertTriangle className="h-4 w-4" />
-              Report Lost Item
-            </TabsTrigger>
-            <TabsTrigger value="found" className="flex items-center gap-2" data-testid="tab-found">
-              <CheckCircle className="h-4 w-4" />
-              Report Found Item
-            </TabsTrigger>
-          </TabsList>
+      <div className="relative z-10">
+        <Navbar />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold mb-4">Report an Item</h1>
+            <p className="text-xl text-muted-foreground">Help reunite items with their owners</p>
+          </div>
+
+          <Tabs defaultValue="lost" className="max-w-4xl mx-auto">
+            <TabsList className="grid w-full grid-cols-2 mb-8 glass">
+              <TabsTrigger value="lost" className="flex items-center gap-2 glass-button" data-testid="tab-lost">
+                <AlertTriangle className="h-4 w-4" />
+                Report Lost Item
+              </TabsTrigger>
+              <TabsTrigger value="found" className="flex items-center gap-2 glass-button" data-testid="tab-found">
+                <CheckCircle className="h-4 w-4" />
+                Report Found Item
+              </TabsTrigger>
+            </TabsList>
 
           <TabsContent value="lost">
-            <Card className="bg-card border-border">
+            <Card className="glass-card border-border/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-red-400">
                   <AlertTriangle className="h-5 w-5" />
@@ -260,7 +274,7 @@ export default function ReportPage() {
 
                   <Button
                     type="submit"
-                    className="w-full shiny-button py-3 text-lg"
+                    className="w-full glass-shiny-button py-3 text-lg"
                     disabled={createItemMutation.isPending}
                     data-testid="button-submit-lost"
                   >
@@ -275,7 +289,7 @@ export default function ReportPage() {
           </TabsContent>
 
           <TabsContent value="found">
-            <Card className="bg-card border-border">
+            <Card className="glass-card border-border/20">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-green-400">
                   <CheckCircle className="h-5 w-5" />
@@ -369,7 +383,7 @@ export default function ReportPage() {
 
                   <Button
                     type="submit"
-                    className="w-full shiny-button py-3 text-lg"
+                    className="w-full glass-shiny-button py-3 text-lg"
                     disabled={createItemMutation.isPending}
                     data-testid="button-submit-found"
                   >
@@ -383,6 +397,7 @@ export default function ReportPage() {
             </Card>
           </TabsContent>
         </Tabs>
+        </div>
       </div>
     </div>
   );

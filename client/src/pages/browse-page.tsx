@@ -36,17 +36,30 @@ export default function BrowsePage() {
   const categories = ["Electronics", "Jewelry", "Documents", "Keys", "Bags", "Clothing"];
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-      
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+    <div className="min-h-screen bg-background flex relative">
+      {/* Spline Background */}
+      <div className="absolute inset-0 z-0">
+        <iframe 
+          src='https://my.spline.design/claritystream-H2XMbAwzgCJFmP5MugBJIizs/' 
+          frameBorder='0' 
+          width='100%' 
+          height='100%'
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
+      </div>
+
+      {/* Content */}
+      <div className="relative z-10 w-full">
+        <Navbar />
+        
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold mb-4">Search & Browse Items</h1>
           <p className="text-xl text-muted-foreground">Find what you're looking for or help others find theirs</p>
         </div>
 
         {/* Search Interface */}
-        <Card className="mb-8">
+        <Card className="mb-8 glass-card">
           <CardContent className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
               <div className="relative">
@@ -71,13 +84,13 @@ export default function BrowsePage() {
                 />
               </div>
               
-              <Select value={itemType} onValueChange={(value: "" | "lost" | "found") => setItemType(value)}>
+              <Select value={itemType || "all"} onValueChange={(value: string) => setItemType(value === "all" ? "" : value as "lost" | "found")}>
                 <SelectTrigger data-testid="select-item-type">
                   <Filter className="h-4 w-4 mr-2" />
                   <SelectValue placeholder="All Items" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">All Items</SelectItem>
+                  <SelectItem value="all">All Items</SelectItem>
                   <SelectItem value="lost">Lost Items</SelectItem>
                   <SelectItem value="found">Found Items</SelectItem>
                 </SelectContent>
@@ -145,6 +158,7 @@ export default function BrowsePage() {
             </div>
           </>
         )}
+      </div>
       </div>
     </div>
   );

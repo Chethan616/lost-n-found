@@ -73,29 +73,40 @@ export default function AuthPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      {/* Left Side - Forms */}
-      <div className="flex-1 flex items-center justify-center p-8">
-        <div className="w-full max-w-md space-y-6">
-          <div className="text-center">
-            <div className="flex items-center justify-center space-x-2 mb-4">
-              <Search className="h-8 w-8 text-blue-400" />
-              <span className="text-2xl font-bold">Lost & Found</span>
-            </div>
-            <h1 className="text-3xl font-bold">Welcome Back</h1>
-            <p className="text-muted-foreground mt-2">
-              Sign in to your account or create a new one
-            </p>
-          </div>
+    <div className="min-h-screen bg-background flex relative">
+      {/* Spline Background */}
+      <div className="absolute inset-0 z-0">
+        <iframe 
+          src='https://my.spline.design/claritystream-H2XMbAwzgCJFmP5MugBJIizs/' 
+          frameBorder='0' 
+          width='100%' 
+          height='100%'
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/70 via-black/50 to-black/70"></div>
+      </div>
 
-          <Tabs defaultValue="login" className="w-full">
-            <TabsList className="grid w-full grid-cols-2">
-              <TabsTrigger value="login" data-testid="tab-login">Sign In</TabsTrigger>
-              <TabsTrigger value="register" data-testid="tab-register">Sign Up</TabsTrigger>
-            </TabsList>
+      {/* Content */}
+      <div className="relative z-10 flex w-full items-center justify-center p-8">
+        <div className="w-full max-w-md space-y-6">
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-4">
+                <Search className="h-8 w-8 text-blue-400" />
+                <span className="text-2xl font-bold">Lost & Found</span>
+              </div>
+              <h1 className="text-3xl font-bold">Welcome Back</h1>
+              <p className="text-muted-foreground mt-2">
+                Sign in to your account or create a new one
+              </p>
+            </div>
+
+            <Tabs defaultValue="login" className="w-full">
+              <TabsList className="grid w-full grid-cols-2 glass">
+                <TabsTrigger value="login" data-testid="tab-login" className="glass-button">Sign In</TabsTrigger>
+                <TabsTrigger value="register" data-testid="tab-register" className="glass-button">Sign Up</TabsTrigger>
+              </TabsList>
 
             <TabsContent value="login">
-              <Card>
+              <Card className="glass-card">
                 <CardHeader>
                   <CardTitle>Sign In</CardTitle>
                   <CardDescription>
@@ -112,6 +123,7 @@ export default function AuthPage() {
                         placeholder="Enter your username"
                         {...loginForm.register("username")}
                         data-testid="input-login-username"
+                        className="glass-input"
                       />
                       {loginForm.formState.errors.username && (
                         <p className="text-sm text-red-500" data-testid="error-login-username">
@@ -128,6 +140,7 @@ export default function AuthPage() {
                         placeholder="Enter your password"
                         {...loginForm.register("password")}
                         data-testid="input-login-password"
+                        className="glass-input"
                       />
                       {loginForm.formState.errors.password && (
                         <p className="text-sm text-red-500" data-testid="error-login-password">
@@ -138,7 +151,7 @@ export default function AuthPage() {
 
                     <Button
                       type="submit"
-                      className="w-full shiny-button"
+                      className="w-full glass-shiny-button"
                       disabled={loginMutation.isPending}
                       data-testid="button-login-submit"
                     >
@@ -153,7 +166,7 @@ export default function AuthPage() {
             </TabsContent>
 
             <TabsContent value="register">
-              <Card>
+              <Card className="glass-card">
                 <CardHeader>
                   <CardTitle>Create Account</CardTitle>
                   <CardDescription>
@@ -170,6 +183,7 @@ export default function AuthPage() {
                         placeholder="Choose a username"
                         {...registerForm.register("username")}
                         data-testid="input-register-username"
+                        className="glass-input"
                       />
                       {registerForm.formState.errors.username && (
                         <p className="text-sm text-red-500" data-testid="error-register-username">
@@ -186,6 +200,7 @@ export default function AuthPage() {
                         placeholder="Enter your email"
                         {...registerForm.register("email")}
                         data-testid="input-register-email"
+                        className="glass-input"
                       />
                       {registerForm.formState.errors.email && (
                         <p className="text-sm text-red-500" data-testid="error-register-email">
@@ -202,6 +217,7 @@ export default function AuthPage() {
                         placeholder="Create a password"
                         {...registerForm.register("password")}
                         data-testid="input-register-password"
+                        className="glass-input"
                       />
                       {registerForm.formState.errors.password && (
                         <p className="text-sm text-red-500" data-testid="error-register-password">
@@ -218,6 +234,7 @@ export default function AuthPage() {
                         placeholder="Confirm your password"
                         {...registerForm.register("confirmPassword")}
                         data-testid="input-register-confirm-password"
+                        className="glass-input"
                       />
                       {registerForm.formState.errors.confirmPassword && (
                         <p className="text-sm text-red-500" data-testid="error-register-confirm-password">
@@ -228,7 +245,7 @@ export default function AuthPage() {
 
                     <Button
                       type="submit"
-                      className="w-full shiny-button"
+                      className="w-full glass-shiny-button"
                       disabled={registerMutation.isPending}
                       data-testid="button-register-submit"
                     >
@@ -242,20 +259,6 @@ export default function AuthPage() {
               </Card>
             </TabsContent>
           </Tabs>
-        </div>
-      </div>
-
-      {/* Right Side - Hero */}
-      <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-500/20 to-purple-500/20 items-center justify-center">
-        <div className="text-center max-w-md">
-          <div className="animate-float mb-8">
-            <div className="text-6xl mb-4 font-bold text-blue-600">L&F</div>
-            <div className="text-2xl text-gray-600">Lost & Found</div>
-          </div>
-          <h2 className="text-3xl font-bold mb-4">Reunite with Your Belongings</h2>
-          <p className="text-muted-foreground text-lg">
-            Our AI-powered platform helps you find lost items and claim found ones with confidence and security.
-          </p>
         </div>
       </div>
     </div>

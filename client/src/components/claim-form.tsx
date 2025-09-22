@@ -121,7 +121,7 @@ export function ClaimForm() {
           </SelectTrigger>
           <SelectContent>
             {activeItems.length === 0 ? (
-              <SelectItem value="" disabled>No items available to claim</SelectItem>
+              <SelectItem value="no-items" disabled>No items available to claim</SelectItem>
             ) : (
               activeItems.map((item) => (
                 <SelectItem key={item.id} value={item.id}>
@@ -151,7 +151,7 @@ export function ClaimForm() {
 
       <div className="space-y-2">
         <Label>Upload Proof of Ownership</Label>
-        <div className="border-2 border-dashed border-border rounded-xl p-6 text-center hover:border-blue-500/50 transition-colors">
+        <div className="border-2 border-dashed border-border/30 rounded-xl p-6 text-center hover:border-blue-500/50 transition-colors glass-light">
           <input
             type="file"
             accept="image/*"
@@ -174,7 +174,7 @@ export function ClaimForm() {
 
       <Button
         type="submit"
-        className="w-full shiny-button py-3 text-lg"
+        className="w-full glass-shiny-button py-3 text-lg"
         disabled={createClaimMutation.isPending || !selectedItemId}
         data-testid="button-submit-claim"
       >

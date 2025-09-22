@@ -1,24 +1,11 @@
 // Import the library's default export and adapt dynamically since the
 // package exposes a default module entry point.
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import * as fs from "fs";
 
-// To avoid startup-time dependency issues during development, provide a local
-// stub for the GenAI client. This lets the server boot without installing or
-// correctly wiring the external SDK. The stub returns empty/neutral responses
-// so the existing fallback logic in this file (calculateBasicTextSimilarity,
-// default image similarity) will be used.
-const genAI = {
-  getGenerativeModel: ({ model }: { model: string }) => ({
-    async generateContent(_input: any) {
-      // Return an object shaped like the real client but with an empty text
-      // response so JSON.parse will fail and the code will fall back to local
-      // similarity calculations.
-      return {
-        response: Promise.resolve({ text: () => "" }),
-      };
-    },
-  }),
-};
+// Initialize Gemini AI with API key from environment
+const apiKey = process.env.GEMINI_API_KEY;
+const genAI = apiKey ? new GoogleGenerativeAI(apiKey) : null;
 
 export interface VerificationResult {
   textSimilarity: number;
@@ -78,94 +65,132 @@ export async function verifyClaimWithAI(
 }
 
 async function analyzeTextSimilarity(original: string, claim: string): Promise<number> {
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-  
-  const prompt = `
-    Analyze the similarity between these two item descriptions and return only a JSON response:
-    
-    Original Description: "${original}"
-    Claim Description: "${claim}"
-    
-    Compare:
-    1. Item type and category
-    2. Physical characteristics (color, size, brand, model)
-    3. Unique identifying features
-    4. Condition and notable details
-    
-    Return JSON format:
-    {
-      "similarity": 0.85,
-      "reasoning": "Both descriptions match on key identifying features..."
-    }
-    
-    Similarity score should be between 0 and 1.
-  `;
+  if (!genAI) {
+    console.log("No Gemini API key provided, using fallback text similarity");
+    return calculateBasicTextSimilarity(original, claim);
+  }
 
-  const result = await model.generateContent(prompt);
-  const response = await result.response;
-  const text = response.text();
-  
   try {
-    const parsed = JSON.parse(text);
-    return Math.max(0, Math.min(1, parsed.similarity || 0));
-  } catch {
-    // Fallback: basic text similarity
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+    
+    const prompt = `
+      Analyze the similarity between these two item descriptions and return only a JSON response:
+      
+      Original Description: "${original}"
+      Claim Description: "${claim}"
+      
+      Compare:
+      1. Item type and category
+      2. Physical characteristics (color, size, brand, model)
+      3. Unique identifying features
+      4. Condition and notable details
+      
+      Return JSON format:
+      {
+        "similarity": 0.85,
+        "reasoning": "Both descriptions match on key identifying features..."
+      }
+      
+      Similarity score should be between 0 and 1.
+    `;
+
+    const result = await model.generateContent(prompt);
+    const response = result.response;
+    const text = response.text();
+    
+    try {
+      const parsed = JSON.parse(text);
+      return Math.max(0, Math.min(1, parsed.similarity || 0));
+    } catch (parseError) {
+      console.log("Failed to parse AI response, using fallback:", parseError);
+      return calculateBasicTextSimilarity(original, claim);
+    }
+  } catch (error) {
+    console.log("AI text analysis failed, using fallback:", error);
     return calculateBasicTextSimilarity(original, claim);
   }
 }
 
 async function analyzeImageSimilarity(imagePath1: string, imagePath2: string): Promise<number> {
+  if (!genAI) {
+    console.log("No Gemini API key provided, using fallback image similarity");
+    return 0.5; // Default moderate similarity
+  }
+
   if (!fs.existsSync(imagePath1) || !fs.existsSync(imagePath2)) {
     return 0;
   }
 
-  const model = genAI.getGenerativeModel({ model: "gemini-2.5-pro" });
-  
-  const image1 = fs.readFileSync(imagePath1);
-  const image2 = fs.readFileSync(imagePath2);
-  
-  const prompt = `
-    Compare these two images and determine if they show the same item. Return only JSON:
-    
-    {
-      "similarity": 0.92,
-      "reasoning": "Both images show the same iPhone model with matching physical characteristics..."
-    }
-    
-    Consider:
-    - Object type and shape
-    - Colors and materials
-    - Unique marks, scratches, or features
-    - Brand logos or text
-    - Overall condition
-    
-    Similarity score between 0 and 1.
-  `;
-
-  const result = await model.generateContent([
-    prompt,
-    {
-      inlineData: {
-        data: image1.toString("base64"),
-        mimeType: "image/jpeg",
-      },
-    },
-    {
-      inlineData: {
-        data: image2.toString("base64"),
-        mimeType: "image/jpeg",
-      },
-    },
-  ]);
-  
-  const response = await result.response;
-  const text = response.text();
-  
   try {
-    const parsed = JSON.parse(text);
-    return Math.max(0, Math.min(1, parsed.similarity || 0));
-  } catch {
-    return 0.5; // Default moderate similarity if parsing fails
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-vision" });
+    
+    const image1 = fs.readFileSync(imagePath1);
+    const image2 = fs.readFileSync(imagePath2);
+    
+    const prompt = `
+      Compare these two images and determine if they show the same item. Return only JSON:
+      
+      {
+        "similarity": 0.92,
+        "reasoning": "Both images show the same iPhone model with matching physical characteristics..."
+      }
+      
+      Consider:
+      - Object type and shape
+      - Colors and materials
+      - Unique marks, scratches, or features
+      - Brand logos or text
+      - Overall condition
+      
+      Similarity score between 0 and 1.
+    `;
+
+    const result = await model.generateContent([
+      prompt,
+      {
+        inlineData: {
+          data: image1.toString("base64"),
+          mimeType: getImageMimeType(imagePath1),
+        },
+      },
+      {
+        inlineData: {
+          data: image2.toString("base64"),
+          mimeType: getImageMimeType(imagePath2),
+        },
+      },
+    ]);
+    
+    const response = result.response;
+    const text = response.text();
+    
+    try {
+      const parsed = JSON.parse(text);
+      return Math.max(0, Math.min(1, parsed.similarity || 0));
+    } catch (parseError) {
+      console.log("Failed to parse AI image response:", parseError);
+      return 0.5;
+    }
+  } catch (error) {
+    console.log("AI image analysis failed:", error);
+    return 0.5; // Default moderate similarity if AI fails
+  }
+}
+
+function getImageMimeType(filePath: string): string {
+  const ext = filePath.split('.').pop()?.toLowerCase();
+  switch (ext) {
+    case 'jpg':
+    case 'jpeg':
+      return 'image/jpeg';
+    case 'png':
+      return 'image/png';
+    case 'gif':
+      return 'image/gif';
+    case 'webp':
+      return 'image/webp';
+    default:
+      return 'image/jpeg';
   }
 }
 
@@ -184,28 +209,45 @@ function calculateBasicTextSimilarity(text1: string, text2: string): number {
 
 export async function detectFraud(userId: string, failedClaims: number): Promise<{ isSuspicious: boolean; reason?: string }> {
   if (failedClaims >= 3) {
-    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-    
-    const prompt = `
-      A user has failed ${failedClaims} claim attempts. Assess fraud risk and return JSON:
-      
-      {
-        "isSuspicious": true,
-        "reason": "Multiple failed claims indicate potential fraudulent activity..."
-      }
-    `;
+    if (!genAI) {
+      return {
+        isSuspicious: true,
+        reason: "Multiple failed claim attempts detected"
+      };
+    }
 
     try {
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const text = response.text();
-      const parsed = JSON.parse(text);
+      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
       
-      return {
-        isSuspicious: parsed.isSuspicious || failedClaims >= 3,
-        reason: parsed.reason || "Multiple failed claim attempts detected"
-      };
-    } catch {
+      const prompt = `
+        A user has failed ${failedClaims} claim attempts. Assess fraud risk and return JSON:
+        
+        {
+          "isSuspicious": true,
+          "reason": "Multiple failed claims indicate potential fraudulent activity..."
+        }
+      `;
+
+      const result = await model.generateContent(prompt);
+      const response = result.response;
+      const text = response.text();
+      
+      try {
+        const parsed = JSON.parse(text);
+        
+        return {
+          isSuspicious: parsed.isSuspicious || failedClaims >= 3,
+          reason: parsed.reason || "Multiple failed claim attempts detected"
+        };
+      } catch (parseError) {
+        console.log("Failed to parse AI fraud detection response:", parseError);
+        return {
+          isSuspicious: true,
+          reason: "Multiple failed claim attempts detected"
+        };
+      }
+    } catch (error) {
+      console.log("AI fraud detection failed:", error);
       return {
         isSuspicious: true,
         reason: "Multiple failed claim attempts detected"

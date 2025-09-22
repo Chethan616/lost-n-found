@@ -79,7 +79,8 @@ export class MemStorage implements IStorage {
       const search = filters.search.toLowerCase();
       items = items.filter(item => 
         item.itemName.toLowerCase().includes(search) ||
-        item.description.toLowerCase().includes(search)
+        item.description.toLowerCase().includes(search) ||
+        item.contactInfo.toLowerCase().includes(search)
       );
     }
     
