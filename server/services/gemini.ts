@@ -36,14 +36,14 @@ export async function verifyClaimWithAI(
       ? (0.6 * textSimilarity) + (0.4 * imageSimilarity)
       : textSimilarity;
 
-    // Determine decision
+    // Determine decision - prioritize text similarity for auto-approval
     let decision: "approved" | "rejected" | "manual_review";
     let reason: string;
     
-    if (finalScore >= 0.8) {
+    if (textSimilarity >= 0.8) {
       decision = "approved";
-      reason = "High confidence match. Descriptions and evidence strongly align.";
-    } else if (finalScore >= 0.5) {
+      reason = "High text similarity (80%+) detected. Claim automatically approved.";
+    } else if (finalScore >= 0.6) {
       decision = "manual_review";
       reason = "Moderate similarity detected. Manual review recommended for verification.";
     } else {
@@ -122,7 +122,7 @@ async function analyzeImageSimilarity(imagePath1: string, imagePath2: string): P
   }
 
   try {
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-vision" });
+    const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
     
     const image1 = fs.readFileSync(imagePath1);
     const image2 = fs.readFileSync(imagePath2);
