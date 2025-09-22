@@ -1,0 +1,118 @@
+You are my AI coding assistant. Help me build a Lost & Found website using:
+- Next.js (frontend + API routes for backend)
+- SQLite (database)
+- Tailwind CSS (styling)
+- Spline (3D UI animations)
+- Gemini AI (AI verification and chatbot features)
+
+## 🎯 Project Goal
+Create a full-stack Lost & Found platform where users can:
+1. Report lost items.
+2. Report found items.
+3. Search for items.
+4. Claim found items using AI verification.
+5. Communicate with the finder/owner if the claim is approved.
+
+## 🛠️ Tech Requirements
+- **Next.js App Router** (use server components where useful).
+- **SQLite** for persistence (via Prisma or direct sqlite3).
+- **Tailwind CSS** for UI styling.
+- **Spline** for interactive 3D animations on homepage and claim verification screen.
+- **Gemini AI** for:
+  - Claim verification (text + image similarity).
+  - Fraud detection (repeated failed claims).
+  - Optional chatbot: AI can ask clarifying questions to claimer.
+
+## 📂 Suggested Project Structure
+/lost-and-found
+  /app
+    /api
+      items/route.js      → CRUD for lost/found items
+      users/route.js      → user management
+      claims/route.js     → AI verification + claim handling
+  /components
+    Navbar.jsx
+    ItemCard.jsx
+    ClaimForm.jsx
+    SplineScene.jsx
+  /db
+    schema.prisma or schema.sql
+    database.sqlite
+  /styles
+    globals.css
+  /public
+    spline-scene.json
+
+## 📑 Database Schema (SQLite)
+Tables:
+- users(id, name, email, password)
+- items(id, type[lost/found], item_name, description, location, date, contact_info, status, user_id)
+- claims(id, item_id, claimer_id, evidence_text, evidence_image_url, ai_score, status[pending/approved/rejected])
+
+## 🔥 Core Features
+1. **User Accounts**
+   - Sign up / login with email + password.
+   - Stored in SQLite.
+
+2. **Report Lost Item**
+   - Form: item_name, description, location, date, contact_info.
+   - Stored in SQLite as type="lost".
+
+3. **Report Found Item**
+   - Form: item_name, description, location_found, date_found, contact_info.
+   - Stored in SQLite as type="found".
+
+4. **Search & Browse**
+   - Filter by lost/found.
+   - Keyword + location search.
+   - Display with ItemCard component.
+
+5. **AI Claim Verification**
+   - When a user claims an item:
+     - They submit text evidence + optional photo.
+     - Gemini AI compares:
+       a) Lost description vs. Claimer description (text similarity).
+       b) Lost image vs. Claimer image (image similarity).
+     - Calculate confidence score:
+       Final Score = (0.6 × text_similarity) + (0.4 × image_similarity).
+     - If score >= 0.8 → auto-approved.
+     - Else → status = "manual review".
+
+6. **Fraud Detection**
+   - If the same user fails 3 claims in a row, mark them as suspicious.
+   - AI flags them with reason.
+
+7. **Chatbot (optional)**
+   - Gemini can ask clarifying questions about unique features:
+     - “What brand is on the backpack?”
+     - “Is there a scratch on the screen?”
+
+8. **UI with Spline**
+   - Homepage: floating 3D objects (keys, wallet, backpack).
+   - Claim verification screen: scanning animation with magnifying glass.
+   - Success = green checkmark animation.
+   - Failure = warning animation.
+
+## 🤖 Gemini AI Prompt for Claim Verification
+When verifying claims, always return JSON:
+{
+  "text_similarity": 0.85,
+  "image_similarity": 0.75,
+  "final_score": 0.81,
+  "decision": "approved",
+  "reason": "Descriptions and images match strongly. Confidence is high."
+}
+
+## 🚀 Deliverables
+- Working Next.js app with all routes.
+- SQLite integration.
+- Tailwind + Spline UI.
+- AI-powered claim verification API.
+- Ready to deploy locally or on Vercel.
+
+Your job:
+- Write clean, production-ready code.
+- Suggest database improvements.
+- Optimize API performance.
+- Ensure AI scoring logic is secure and fair.
+- Make UI modern, responsive, and professional.
