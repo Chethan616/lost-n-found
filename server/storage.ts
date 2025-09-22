@@ -23,14 +23,14 @@ export interface IStorage {
   updateClaim(id: string, updates: Partial<Claim>): Promise<void>;
   getUserFailedClaims(userId: string): Promise<number>;
   
-  sessionStore: session.SessionStore;
+  sessionStore: any;
 }
 
 export class MemStorage implements IStorage {
   private users: Map<string, User>;
   private items: Map<string, Item>;
   private claims: Map<string, Claim>;
-  public sessionStore: session.SessionStore;
+  public sessionStore: any;
 
   constructor() {
     this.users = new Map();
@@ -125,7 +125,8 @@ export class MemStorage implements IStorage {
       ...itemData,
       id,
       status: "active",
-      createdAt: new Date()
+      createdAt: new Date(),
+      imageUrl: itemData.imageUrl || null
     };
     this.items.set(id, item);
     return item;
@@ -178,7 +179,12 @@ export class MemStorage implements IStorage {
       ...claimData,
       id,
       status: "pending",
-      createdAt: new Date()
+      createdAt: new Date(),
+      evidenceImageUrl: claimData.evidenceImageUrl || null,
+      aiScore: null,
+      textSimilarity: null,
+      imageSimilarity: null,
+      reason: null
     };
     this.claims.set(id, claim);
     return claim;

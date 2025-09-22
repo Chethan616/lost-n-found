@@ -6,7 +6,10 @@ import runtimeErrorOverlay from "@replit/vite-plugin-runtime-error-modal";
 export default defineConfig({
   plugins: [
     react(),
-    runtimeErrorOverlay(),
+  // runtimeErrorOverlay() shows a blocking overlay in the browser. Keep
+  // the plugin but rely on Vite's server.hmr.overlay = false to disable the
+  // blocking overlay behavior.
+  runtimeErrorOverlay(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
@@ -32,6 +35,10 @@ export default defineConfig({
     emptyOutDir: true,
   },
   server: {
+    // Disable Vite's HMR overlay which shows a blocking UI when runtime
+    // errors occur. This avoids the clickable overlay message described by the
+    // runtime error plugin output.
+    hmr: { overlay: false },
     fs: {
       strict: true,
       deny: ["**/.*"],

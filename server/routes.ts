@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, Request, Response } from "express";
 import { createServer, type Server } from "http";
 import { setupAuth } from "./auth";
 import { storage } from "./storage";
@@ -50,10 +50,20 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post('/api/items', upload.single('image'), handleUploadError, async (req, res) => {
+  app.post('/api/items', upload.single('image'), handleUploadError, async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      // Coerce date inputs from HTML date fields (strings like 'YYYY-MM-DD')
+      // into a JavaScript Date instance which the drizzle-zod timestamp mode
+      // can accept during validation.
+      if (req.body && typeof req.body.date === 'string') {
+        const parsed = Date.parse(req.body.date);
+        if (!isNaN(parsed)) {
+          req.body.date = new Date(parsed);
+        }
       }
 
       const validation = insertItemSchema.safeParse(req.body);
@@ -122,7 +132,7 @@ export function registerRoutes(app: Express): Server {
     }
   });
 
-  app.post('/api/claims', upload.single('evidenceImage'), handleUploadError, async (req, res) => {
+  app.post('/api/claims', upload.single('evidenceImage'), handleUploadError, async (req: Request, res: Response) => {
     try {
       if (!req.isAuthenticated()) {
         return res.status(401).json({ message: 'Authentication required' });

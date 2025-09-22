@@ -249,9 +249,8 @@ export default function AuthPage() {
       <div className="hidden lg:flex flex-1 bg-gradient-to-br from-blue-500/20 to-purple-500/20 items-center justify-center">
         <div className="text-center max-w-md">
           <div className="animate-float mb-8">
-            <div className="text-6xl mb-4">🔑</div>
-            <div className="text-5xl mx-8">👜</div>
-            <div className="text-6xl">🎒</div>
+            <div className="text-6xl mb-4 font-bold text-blue-600">L&F</div>
+            <div className="text-2xl text-gray-600">Lost & Found</div>
           </div>
           <h2 className="text-3xl font-bold mb-4">Reunite with Your Belongings</h2>
           <p className="text-muted-foreground text-lg">
