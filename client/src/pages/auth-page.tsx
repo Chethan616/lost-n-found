@@ -80,7 +80,7 @@ export default function AuthPage() {
       {/* Spline Background */}
       <div className="absolute inset-0 z-0">
         <iframe 
-          src='https://my.spline.design/claritystream-H2XMbAwzgCJFmP5MugBJIizs/' 
+          src='https://my.spline.design/claritystream-lkgbVYMu6eVcDGgnhEeByPtS/' 
           frameBorder='0' 
           width='100%' 
           height='100%'
