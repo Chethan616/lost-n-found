@@ -2,6 +2,7 @@ import { type User, type InsertUser, type Item, type InsertItem, type Claim, typ
 import { randomUUID } from "crypto";
 import session from "express-session";
 import createMemoryStore from "memorystore";
+import { SqliteStorage } from "./sql-storage";
 
 const MemoryStore = createMemoryStore(session);
 
@@ -205,5 +206,6 @@ export class MemStorage implements IStorage {
     return claims.length;
   }
 }
-
-export const storage = new MemStorage();
+// Export SQLite-backed storage for persistence. If you prefer in-memory (ephemeral),
+// replace the following line with: export const storage = new MemStorage();
+export const storage = new SqliteStorage();
