@@ -37,11 +37,35 @@ export function ClaimForm() {
 
   // Get available items to claim
   const { data: items = [] } = useQuery<ItemWithUser[]>({
-    queryKey: ["/api/items"],
+    // include the type in the key so react-query caches per-type separately
+    queryKey: ["/api/items", { type: "found" }],
     queryFn: async () => {
-      const res = await fetch("/api/items?type=lost", { credentials: "include" });
+      // Fetch only found items from the backend
+      const url = "/api/items?type=found&_src=claimForm";
+      // eslint-disable-next-line no-console
+      console.debug("claim-form: fetching items from", url);
+      // Print a stack trace to see what code path is making this request
+      // eslint-disable-next-line no-console
+      console.trace("claim-form: fetch stack trace");
+      const res = await fetch(url, { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch items");
-      return res.json();
+      const json = await res.json();
+      // eslint-disable-next-line no-console
+      console.debug("claim-form: fetched items count:", Array.isArray(json) ? json.length : 0, "types:", Array.isArray(json) ? json.map((i: any) => i.type) : []);
+      // helpful debug: log what the client actually received
+      // eslint-disable-next-line no-console
+      console.debug("claim-form: fetched found items:", json);
+      return json;
+    },
+  });
+
+  // Check whether the user is authenticated — claiming requires login
+  const { data: currentUser } = useQuery({
+    queryKey: ["/api/user"],
+    queryFn: async () => {
+      const r = await fetch("/api/user", { credentials: "include" });
+      if (!r.ok) return null;
+      return r.json();
     },
   });
 
@@ -166,7 +190,13 @@ export function ClaimForm() {
     }
   };
 
-  const activeItems = items.filter(item => item.status === "active");
+  // Show all items that are not claimed. That means items with status
+  // 'active' or 'resolved' (or anything other than 'claimed') will appear.
+  // This matches your request to "show all items which are not claimed".
+  const activeItems = items.filter(item => item.status !== "claimed");
+
+  // If user is not logged in, show a hint in the select and disable submission
+  const userNotLoggedIn = !currentUser;
 
   const getStatusIcon = (decision: string) => {
     switch (decision) {
@@ -209,12 +239,24 @@ export function ClaimForm() {
         <div className="space-y-2">
           <Label htmlFor="item-select">Select Item to Claim</Label>
           <Select value={selectedItemId} onValueChange={setSelectedItemId}>
-            <SelectTrigger data-testid="select-claim-item">
-              <SelectValue placeholder="Choose an item you found" />
-            </SelectTrigger>
+            <SelectTrigger id="item-select" data-testid="select-claim-item">
+                <SelectValue placeholder={activeItems.length === 0 ? "No found items available" : "Choose an item you found"} />
+              </SelectTrigger>
             <SelectContent>
               {activeItems.length === 0 ? (
-                <SelectItem value="no-items" disabled>No items available to claim</SelectItem>
+                <>
+                  <SelectItem value="no-items" disabled>No items available to claim</SelectItem>
+                  {/* debug info: show what items we fetched but filtered out */}
+                  <SelectItem value="debug" disabled className="text-xs text-muted-foreground">
+                    Debug: fetched {items.length} items; not-claimed {activeItems.length}
+                  </SelectItem>
+                  {/* Visible note for the user so they can tell what statuses the server returned */}
+                  {items.length > 0 && (
+                    <SelectItem value="debug2" disabled className="text-xs text-muted-foreground">
+                      Server statuses: {Array.from(new Set(items.map(i => i.status))).join(", ")}
+                    </SelectItem>
+                  )}
+                </>
               ) : (
                 activeItems.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
@@ -225,6 +267,10 @@ export function ClaimForm() {
             </SelectContent>
           </Select>
         </div>
+
+          {userNotLoggedIn && (
+            <p className="text-sm text-yellow-400">You must be logged in to submit a claim. Please sign in.</p>
+          )}
 
         <div className="space-y-2">
           <Label htmlFor="evidence-text">Describe Your Item</Label>
@@ -268,7 +314,7 @@ export function ClaimForm() {
         <Button
           type="submit"
           className="w-full glass-shiny-button py-3 text-lg"
-          disabled={createClaimMutation.isPending || isVerifying || !selectedItemId}
+          disabled={createClaimMutation.isPending || isVerifying || !selectedItemId || userNotLoggedIn}
           data-testid="button-submit-claim"
         >
           {createClaimMutation.isPending || isVerifying ? (

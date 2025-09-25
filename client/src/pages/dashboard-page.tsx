@@ -44,8 +44,11 @@ export default function DashboardPage() {
     enabled: !!user?.id,
   });
 
+  // Exclude items that have been claimed from dashboard lists
+  const visibleUserItems = userItems.filter(item => item.status !== 'claimed');
+
   const recentActivity = [
-    ...userItems.slice(0, 3).map(item => ({
+    ...visibleUserItems.slice(0, 3).map(item => ({
       id: `item-${item.id}`,
       type: 'item',
       title: `${item.type === 'lost' ? 'Lost' : 'Found'} item: ${item.itemName}`,

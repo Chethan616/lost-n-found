@@ -19,6 +19,9 @@ export function registerRoutes(app: Express): Server {
   app.get('/api/items', async (req, res) => {
     try {
       const { type, search, location } = req.query;
+  // Debug logging to help track which pages request which filters
+  // eslint-disable-next-line no-console
+  console.debug(`/api/items requested - query:`, { type, search, location, src: req.query._src, ip: req.ip, referer: req.get('referer'), authenticated: req.isAuthenticated() });
       const filters: any = {};
       
       if (type && (type === 'lost' || type === 'found')) {

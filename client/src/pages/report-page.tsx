@@ -243,7 +243,7 @@ export default function ReportPage() {
                       <Label htmlFor="lost-location">Last Seen Location</Label>
                       <Input
                         id="lost-location"
-                        placeholder="e.g., Central Park, NYC"
+                        placeholder="e.g., PRP, VIT"
                         {...lostForm.register("location")}
                         data-testid="input-lost-location"
                       />
@@ -352,7 +352,7 @@ export default function ReportPage() {
                       <Label htmlFor="found-location">Found Location</Label>
                       <Input
                         id="found-location"
-                        placeholder="e.g., Times Square, NYC"
+                        placeholder="e.g., PRP, VIT"
                         {...foundForm.register("location")}
                         data-testid="input-found-location"
                       />

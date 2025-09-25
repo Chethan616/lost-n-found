@@ -6,6 +6,18 @@ const app = express();
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
+// During local development allow relaxed CSP to avoid blocking dev-only eval usage
+if (process.env.NODE_ENV === 'development') {
+  app.use((req, res, next) => {
+    // Note: only set this for local development. In production, strict CSP must be used.
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self' 'unsafe-inline' data: blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline'"
+    );
+    next();
+  });
+}
+
 app.use((req, res, next) => {
   const start = Date.now();
   const path = req.path;

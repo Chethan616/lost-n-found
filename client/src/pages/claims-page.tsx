@@ -154,6 +154,13 @@ export default function ClaimsPage() {
                         <p className="text-sm text-muted-foreground mb-3" data-testid={`claim-evidence-${claim.id}`}>
                           {claim.evidenceText}
                         </p>
+
+                        {/* Show the finder/contact email (owner of the found item) to the claimer so they can contact privately */}
+                        {claim.item?.user?.email && (
+                          <p className="text-sm text-muted-foreground mb-3">
+                            Contact finder at: <a href={`mailto:${claim.item.user.email}`} className="underline text-blue-400">{claim.item.user.email}</a>
+                          </p>
+                        )}
                         
                         {claim.aiScore !== null && claim.aiScore !== undefined && (
                           <div className="grid grid-cols-3 gap-2 text-xs">

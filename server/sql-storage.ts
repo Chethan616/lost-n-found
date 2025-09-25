@@ -89,6 +89,9 @@ export class SqliteStorage implements IStorage {
 
   async getItems(filters?: { type?: "lost" | "found"; search?: string; location?: string }): Promise<ItemWithUser[]> {
     // Start with base query
+    // Debug incoming filters
+    // eslint-disable-next-line no-console
+    console.debug("SqliteStorage.getItems called - filters:", filters);
     let query = db
       .select({
         item: items,
@@ -99,6 +102,8 @@ export class SqliteStorage implements IStorage {
       .orderBy(desc(items.createdAt));
 
     const result = await query;
+    // eslint-disable-next-line no-console
+    console.debug(`SqliteStorage.getItems - db returned rows: ${result.length}`);
     
     // Convert to proper format with date conversion
     let itemsWithUsers = result.map(row => ({
@@ -128,6 +133,8 @@ export class SqliteStorage implements IStorage {
         item.location.toLowerCase().includes(location)
       );
     }
+    // eslint-disable-next-line no-console
+    console.debug(`SqliteStorage.getItems - after filters: ${itemsWithUsers.length}`);
     
     return itemsWithUsers;
   }
