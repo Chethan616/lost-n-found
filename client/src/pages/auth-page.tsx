@@ -18,6 +18,9 @@ const loginSchema = z.object({
 });
 
 const registerSchema = insertUserSchema.extend({
+  email: z.string()
+    .regex(/^[^@]+@vitstudent\.ac\.in$/, "Email must be a valid VIT student email (@vitstudent.ac.in)")
+    .email("Invalid email address"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
@@ -197,7 +200,7 @@ export default function AuthPage() {
                       <Input
                         id="register-email"
                         type="email"
-                        placeholder="Enter your email"
+                        placeholder="Enter your vitstudent.ac.in email"
                         {...registerForm.register("email")}
                         data-testid="input-register-email"
                         className="glass-input"
