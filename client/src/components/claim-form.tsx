@@ -27,9 +27,13 @@ interface VerificationResult {
   reason: string;
 }
 
+import { useEffect } from "react";
+import { useLocation } from "wouter";
+
 export function ClaimForm() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string>("");
+  const [location] = useLocation();
   const [isVerifying, setIsVerifying] = useState(false);
   const [verificationResult, setVerificationResult] = useState<VerificationResult | null>(null);
   const { toast } = useToast();
@@ -37,14 +41,12 @@ export function ClaimForm() {
 
   // Get available items to claim
   const { data: items = [] } = useQuery<ItemWithUser[]>({
-    // include the type in the key so react-query caches per-type separately
-    queryKey: ["/api/items", { type: "found" }],
+    // Remove type filter: fetch all items, not just found
+    queryKey: ["/api/items", { all: true }],
     queryFn: async () => {
-      // Fetch only found items from the backend
-      const url = "/api/items?type=found&_src=claimForm";
+      const url = "/api/items?_src=claimForm";
       // eslint-disable-next-line no-console
       console.debug("claim-form: fetching items from", url);
-      // Print a stack trace to see what code path is making this request
       // eslint-disable-next-line no-console
       console.trace("claim-form: fetch stack trace");
       const res = await fetch(url, { credentials: "include" });
@@ -52,12 +54,13 @@ export function ClaimForm() {
       const json = await res.json();
       // eslint-disable-next-line no-console
       console.debug("claim-form: fetched items count:", Array.isArray(json) ? json.length : 0, "types:", Array.isArray(json) ? json.map((i: any) => i.type) : []);
-      // helpful debug: log what the client actually received
       // eslint-disable-next-line no-console
-      console.debug("claim-form: fetched found items:", json);
+      console.debug("claim-form: fetched all items:", json);
       return json;
     },
   });
+
+
 
   // Check whether the user is authenticated — claiming requires login
   const { data: currentUser } = useQuery({
@@ -152,7 +155,8 @@ export function ClaimForm() {
   });
 
   const onSubmit = (data: ClaimFormData) => {
-    if (!selectedItemId) {
+    const itemIdToUse = data.itemId || selectedItemId;
+    if (!itemIdToUse) {
       toast({
         title: "Please select an item",
         description: "You must select an item to claim",
@@ -165,7 +169,7 @@ export function ClaimForm() {
     setVerificationResult(null);
 
     const formData = new FormData();
-    formData.append("itemId", selectedItemId);
+    formData.append("itemId", itemIdToUse);
     formData.append("evidenceText", data.evidenceText);
     
     if (selectedFile) {
@@ -190,9 +194,7 @@ export function ClaimForm() {
     }
   };
 
-  // Show all items that are not claimed. That means items with status
-  // 'active' or 'resolved' (or anything other than 'claimed') will appear.
-  // This matches your request to "show all items which are not claimed".
+  // Show all items (lost or found) that are not claimed
   const activeItems = items.filter(item => item.status !== "claimed");
 
   // If user is not logged in, show a hint in the select and disable submission
@@ -238,9 +240,12 @@ export function ClaimForm() {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-2">
           <Label htmlFor="item-select">Select Item to Claim</Label>
-          <Select value={selectedItemId} onValueChange={setSelectedItemId}>
+          <Select value={selectedItemId} onValueChange={value => {
+            setSelectedItemId(value);
+            form.setValue("itemId", value);
+          }}>
             <SelectTrigger id="item-select" data-testid="select-claim-item">
-                <SelectValue placeholder={activeItems.length === 0 ? "No found items available" : "Choose an item you found"} />
+                <SelectValue placeholder={activeItems.length === 0 ? "No items available" : "Choose an item to claim"} />
               </SelectTrigger>
             <SelectContent>
               {activeItems.length === 0 ? (
@@ -260,7 +265,9 @@ export function ClaimForm() {
               ) : (
                 activeItems.map((item) => (
                   <SelectItem key={item.id} value={item.id}>
-                    {item.itemName} - {item.location}
+                    {item.itemName} - {item.location} <span className={item.type === 'found' ? 'text-green-500 ml-1' : 'text-red-500 ml-1'}>
+                      ({item.type === 'found' ? 'found' : 'lost'})
+                    </span>
                   </SelectItem>
                 ))
               )}

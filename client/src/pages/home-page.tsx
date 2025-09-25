@@ -96,7 +96,7 @@ export default function HomePage() {
                   <Button 
                     size="lg" 
                     className="glass-shiny-button text-lg font-semibold"
-                    onClick={() => setLocation("/report")}
+                    onClick={() => setLocation("/report?type=lost")}
                     data-testid="button-report-lost"
                   >
                     Report Lost Item
@@ -104,7 +104,7 @@ export default function HomePage() {
                   <Button 
                     size="lg" 
                     className="glass-shiny-button text-lg font-semibold"
-                    onClick={() => setLocation("/report")}
+                    onClick={() => setLocation("/report?type=found")}
                     data-testid="button-report-found"
                   >
                     Report Found Item

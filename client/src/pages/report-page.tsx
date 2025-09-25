@@ -1,30 +1,45 @@
-import { useState } from "react";
-import { Navbar } from "@/components/navbar";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { insertItemSchema } from "@shared/schema";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useToast } from "@/hooks/use-toast";
-import { Upload, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
+  import { useState, useEffect } from "react";
+  import { Navbar } from "@/components/navbar";
+  import { Button } from "@/components/ui/button";
+  import { Input } from "@/components/ui/input";
+  import { Label } from "@/components/ui/label";
+  import { Textarea } from "@/components/ui/textarea";
+  import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+  import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+  import { useForm } from "react-hook-form";
+  import { zodResolver } from "@hookform/resolvers/zod";
+  import { z } from "zod";
+  import { insertItemSchema } from "@shared/schema";
+  import { useMutation, useQueryClient } from "@tanstack/react-query";
+  import { apiRequest } from "@/lib/queryClient";
+  import { useToast } from "@/hooks/use-toast";
+  import { Upload, AlertTriangle, CheckCircle, Loader2 } from "lucide-react";
 
-const itemFormSchema = insertItemSchema.extend({
-  date: z.string().min(1, "Date is required"),
-});
+  const itemFormSchema = insertItemSchema.extend({
+    date: z.string().min(1, "Date is required"),
+  });
 
-type ItemFormData = z.infer<typeof itemFormSchema>;
+  type ItemFormData = z.infer<typeof itemFormSchema>;
 
-export default function ReportPage() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+  export default function ReportPage() {
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    // Use window.location.search for query string
+    const [tab, setTab] = useState<'lost' | 'found'>('lost');
+    useEffect(() => {
+      const params = new URLSearchParams(window.location.search);
+      const type = params.get('type');
+      if (type === 'found') setTab('found');
+      else setTab('lost');
+    }, []);
+    // Defensive: ensure tab is always valid and log for debugging
+    useEffect(() => {
+      if (tab !== 'lost' && tab !== 'found') setTab('lost');
+      // eslint-disable-next-line no-console
+      console.debug('ReportPage: tab value is', tab);
+    }, [tab]);
+
 
   const lostForm = useForm<ItemFormData>({
     resolver: zodResolver(itemFormSchema),
@@ -167,7 +182,7 @@ export default function ReportPage() {
             <p className="text-xl text-muted-foreground">Help reunite items with their owners</p>
           </div>
 
-          <Tabs defaultValue="lost" className="max-w-4xl mx-auto">
+          <Tabs value={tab} onValueChange={v => setTab(v as 'lost' | 'found')} className="max-w-4xl mx-auto">
             <TabsList className="grid w-full grid-cols-2 mb-8 glass">
               <TabsTrigger value="lost" className="flex items-center gap-2 glass-button" data-testid="tab-lost">
                 <AlertTriangle className="h-4 w-4" />

@@ -44,7 +44,7 @@ export default function DashboardPage() {
     enabled: !!user?.id,
   });
 
-  // Exclude items that have been claimed from dashboard lists
+  // Completely remove claimed items from dashboard lists (not just hide in UI)
   const visibleUserItems = userItems.filter(item => item.status !== 'claimed');
 
   const recentActivity = [
