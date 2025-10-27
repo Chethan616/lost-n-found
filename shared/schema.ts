@@ -19,7 +19,7 @@ export const items = sqliteTable("items", {
   location: text("location").notNull(),
   date: integer("date", { mode: "timestamp" }).notNull(),
   contactInfo: text("contact_info").notNull(),
-  status: text("status", { enum: ["active", "claimed", "resolved"] }).default("active"),
+  status: text("status", { enum: ["active", "claimed", "resolved"] }).default("active"), 
   imageUrl: text("image_url"),
   userId: text("user_id").notNull().references(() => users.id),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`),

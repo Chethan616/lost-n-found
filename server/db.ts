@@ -19,7 +19,7 @@ export function initializeDatabase() {
   try {
     const initSqlPath = path.join(process.cwd(), "server", "sql", "init.sql");
     if (fs.existsSync(initSqlPath)) {
-      const sql = fs.readFileSync(initSqlPath, "utf8");
+      const sql = fs.readFileSync(initSqlPath, "utf8"); 
       sqlite.exec(sql);
       console.log(`Database initialized from ${initSqlPath}`);
     } else {

@@ -197,7 +197,7 @@ export class MemStorage implements IStorage {
     if (claim) {
       this.claims.set(id, { ...claim, ...updates });
     }
-  }
+  } 
 
   async getUserFailedClaims(userId: string): Promise<number> {
     const claims = Array.from(this.claims.values()).filter(
@@ -206,6 +206,4 @@ export class MemStorage implements IStorage {
     return claims.length;
   }
 }
-// Export SQLite-backed storage for persistence. If you prefer in-memory (ephemeral),
-// replace the following line with: export const storage = new MemStorage();
 export const storage = new SqliteStorage();
