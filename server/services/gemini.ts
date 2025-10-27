@@ -33,22 +33,22 @@ export async function verifyClaimWithAI(
     
     // Calculate final score
     const finalScore = originalImagePath && claimImagePath 
-      ? (0.6 * textSimilarity) + (0.4 * imageSimilarity)
+      ? (0.5 * textSimilarity) + (0.5 * imageSimilarity)
       : textSimilarity;
 
-    // Determine decision - prioritize text similarity for auto-approval
+    // Determine decision - more lenient thresholds
     let decision: "approved" | "rejected" | "manual_review";
     let reason: string;
     
-    if (textSimilarity >= 0.8) {
+    if (textSimilarity >= 0.5 || finalScore >= 0.5) {
       decision = "approved";
-      reason = "High text similarity (80%+) detected. Claim automatically approved.";
-    } else if (finalScore >= 0.6) {
+      reason = `Strong match detected (Text: ${Math.round(textSimilarity * 100)}%, Image: ${Math.round(imageSimilarity * 100)}%, Final: ${Math.round(finalScore * 100)}%). Claim approved.`;
+    } else if (textSimilarity >= 0.3 || finalScore >= 0.35) {
       decision = "manual_review";
-      reason = "Moderate similarity detected. Manual review recommended for verification.";
+      reason = `Moderate similarity detected (Text: ${Math.round(textSimilarity * 100)}%, Image: ${Math.round(imageSimilarity * 100)}%). Manual review recommended.`;
     } else {
       decision = "rejected";
-      reason = "Low similarity between claim and original item description.";
+      reason = `Low similarity detected (Text: ${Math.round(textSimilarity * 100)}%, Image: ${Math.round(imageSimilarity * 100)}%). Please provide more specific details matching the original item.`;
     }
 
     return {
@@ -74,24 +74,39 @@ async function analyzeTextSimilarity(original: string, claim: string): Promise<n
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
     
     const prompt = `
-      Analyze the similarity between these two item descriptions and return only a JSON response:
+      You are an expert at matching lost and found item descriptions. Analyze if these descriptions refer to the SAME physical item.
       
-      Original Description: "${original}"
+      Original Item Description: "${original}"
       Claim Description: "${claim}"
       
-      Compare:
-      1. Item type and category
-      2. Physical characteristics (color, size, brand, model)
-      3. Unique identifying features
-      4. Condition and notable details
+      Consider:
+      1. **Core Identity**: Are they describing the same TYPE of object? (e.g., phone, wallet, backpack)
+      2. **Key Characteristics**: Do distinctive features match? (brand, model, color, size)
+      3. **Unique Details**: Any matching serial numbers, scratches, contents, or personal marks?
+      4. **Context Understanding**: Consider synonyms and paraphrasing
+         - "iPhone" = "Apple phone" = "smartphone"
+         - "black backpack" = "dark bag" = "black rucksack"
+         - "lost my wallet with ID cards" matches "found wallet containing identification"
+      5. **Forgive Minor Differences**: Claimer might not know exact model/brand
       
-      Return JSON format:
+      IMPORTANT: Focus on whether they're describing the SAME ITEM, not exact word matching.
+      Example matches:
+      - "Lost iPhone 13 Pro Max, black" ↔ "Found black Apple phone, large screen"
+      - "Blue Nike backpack with laptop inside" ↔ "Blue bag with computer, has swoosh logo"
+      - "Silver MacBook Air with dent on corner" ↔ "Apple laptop, silver, damaged corner"
+      
+      Return ONLY valid JSON:
       {
         "similarity": 0.85,
-        "reasoning": "Both descriptions match on key identifying features..."
+        "reasoning": "Both describe the same [item type]. Key matching features: [list matches]. Minor differences: [list differences]."
       }
       
-      Similarity score should be between 0 and 1.
+      Similarity score (0-1):
+      - 0.9-1.0: Definitely the same item (exact match on key features)
+      - 0.7-0.9: Very likely the same (matches on type + several characteristics)
+      - 0.5-0.7: Possibly the same (matches type + some characteristics)
+      - 0.3-0.5: Uncertain (same type but different details)
+      - 0.0-0.3: Different items
     `;
 
     const result = await model.generateContent(prompt);
@@ -195,16 +210,73 @@ function getImageMimeType(filePath: string): string {
 }
 
 function calculateBasicTextSimilarity(text1: string, text2: string): number {
-  const words1 = text1.toLowerCase().split(/\s+/);
-  const words2 = text2.toLowerCase().split(/\s+/);
+  // Normalize texts
+  const normalize = (text: string) => text.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
   
+  const normalized1 = normalize(text1);
+  const normalized2 = normalize(text2);
+  
+  // Extract words (filter out common words)
+  const commonWords = new Set(['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'is', 'was', 'are', 'were', 'been', 'be', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'my', 'i', 'it', 'this', 'that']);
+  
+  const getKeywords = (text: string) => {
+    return text.split(/\s+/)
+      .filter(word => word.length > 2 && !commonWords.has(word));
+  };
+  
+  const words1 = getKeywords(normalized1);
+  const words2 = getKeywords(normalized2);
+  
+  if (words1.length === 0 || words2.length === 0) {
+    return 0;
+  }
+  
+  // Calculate Jaccard similarity on keywords
   const set1 = new Set(words1);
   const set2 = new Set(words2);
   
   const intersection = new Set(Array.from(set1).filter(x => set2.has(x)));
   const union = new Set([...Array.from(set1), ...Array.from(set2)]);
   
-  return union.size > 0 ? intersection.size / union.size : 0;
+  const jaccardScore = union.size > 0 ? intersection.size / union.size : 0;
+  
+  // Calculate fuzzy matching for partial word matches
+  let fuzzyMatches = 0;
+  const array1 = Array.from(set1);
+  const array2 = Array.from(set2);
+  
+  for (const word1 of array1) {
+    for (const word2 of array2) {
+      if (word1.includes(word2) || word2.includes(word1)) {
+        fuzzyMatches++;
+        break;
+      }
+    }
+  }
+  const fuzzyScore = Math.max(set1.size, set2.size) > 0 ? fuzzyMatches / Math.max(set1.size, set2.size) : 0;
+  
+  // Calculate bigram similarity for phrase matching
+  const getBigrams = (words: string[]) => {
+    const bigrams: string[] = [];
+    for (let i = 0; i < words.length - 1; i++) {
+      bigrams.push(`${words[i]} ${words[i + 1]}`);
+    }
+    return bigrams;
+  };
+  
+  const bigrams1 = new Set(getBigrams(words1));
+  const bigrams2 = new Set(getBigrams(words2));
+  const bigramIntersection = new Set(Array.from(bigrams1).filter(x => bigrams2.has(x)));
+  const bigramUnion = new Set([...Array.from(bigrams1), ...Array.from(bigrams2)]);
+  const bigramScore = bigramUnion.size > 0 ? bigramIntersection.size / bigramUnion.size : 0;
+  
+  // Weighted combination: prioritize exact matches, then fuzzy, then phrases
+  const finalScore = (0.5 * jaccardScore) + (0.3 * fuzzyScore) + (0.2 * bigramScore);
+  
+  return Math.min(1, finalScore);
 }
 
 export async function detectFraud(userId: string, failedClaims: number): Promise<{ isSuspicious: boolean; reason?: string }> {

@@ -5,6 +5,7 @@ import { storage } from "./storage";
 import { insertItemSchema, insertClaimSchema } from "@shared/schema";
 import { upload, handleUploadError, getFileUrl, getFilePath } from "./services/upload";
 import { verifyClaimWithAI, detectFraud } from "./services/gemini";
+import { awardPoints, REWARD_POINTS } from "./services/rewards";
 import express from "express";
 import path from "path";
 
@@ -82,6 +83,18 @@ export function registerRoutes(app: Express): Server {
       };
 
       const item = await storage.createItem(itemData);
+      
+      // Award points for reporting an item
+      const rewardType = item.type === "found" ? "report_found" : "report_lost";
+      const points = item.type === "found" ? REWARD_POINTS.REPORT_FOUND : REWARD_POINTS.REPORT_LOST;
+      await awardPoints(
+        req.user!.id,
+        rewardType,
+        points,
+        `Reported ${item.type} item: ${item.itemName}`,
+        item.id
+      );
+      
       res.status(201).json(item);
     } catch (error) {
       res.status(500).json({ message: 'Failed to create item' });
@@ -200,6 +213,26 @@ export function registerRoutes(app: Express): Server {
         // Update item status if approved
         if (verification.decision === "approved") {
           await storage.updateItemStatus(item.id, "claimed");
+          
+          // Award points to claimer for successful claim
+          await awardPoints(
+            req.user!.id,
+            "claim_approved",
+            REWARD_POINTS.CLAIM_APPROVED,
+            `Successfully claimed item: ${item.itemName}`,
+            item.id,
+            claim.id
+          );
+          
+          // Award points to item owner for helping someone
+          await awardPoints(
+            item.userId,
+            "helped_someone",
+            REWARD_POINTS.HELPED_SOMEONE,
+            `Helped reunite ${item.type} item: ${item.itemName}`,
+            item.id,
+            claim.id
+          );
         }
 
         res.status(201).json({ ...claim, ...verification });
@@ -259,6 +292,53 @@ export function registerRoutes(app: Express): Server {
       });
     } catch (error) {
       res.status(500).json({ message: 'Failed to fetch dashboard stats' });
+    }
+  });
+
+  // Rewards routes
+  app.get('/api/users/:id/rewards', async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : undefined;
+      const rewards = await storage.getUserRewards(req.params.id, limit);
+      res.json(rewards);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch rewards' });
+    }
+  });
+
+  app.get('/api/users/:id/achievements', async (req, res) => {
+    try {
+      if (!req.isAuthenticated()) {
+        return res.status(401).json({ message: 'Authentication required' });
+      }
+
+      const achievements = await storage.getUserAchievements(req.params.id);
+      res.json(achievements);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch achievements' });
+    }
+  });
+
+  app.get('/api/leaderboard', async (req, res) => {
+    try {
+      const limit = req.query.limit ? parseInt(req.query.limit as string) : 10;
+      const leaderboard = await storage.getLeaderboard(limit);
+      
+      // Remove sensitive information
+      const sanitizedLeaderboard = leaderboard.map(user => ({
+        id: user.id,
+        username: user.username,
+        points: user.points,
+        createdAt: user.createdAt
+      }));
+      
+      res.json(sanitizedLeaderboard);
+    } catch (error) {
+      res.status(500).json({ message: 'Failed to fetch leaderboard' });
     }
   });
 

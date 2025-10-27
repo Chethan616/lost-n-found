@@ -9,7 +9,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Search, User, LogOut, Menu, X } from "lucide-react";
+import { Search, User, LogOut, Menu, X, Trophy } from "lucide-react";
 
 export function Navbar() {
   const [location] = useLocation();
@@ -22,6 +22,7 @@ export function Navbar() {
     { name: "Report", href: "/report", testId: "nav-report" },
     { name: "Claims", href: "/claims", testId: "nav-claims" },
     { name: "Dashboard", href: "/dashboard", testId: "nav-dashboard" },
+    { name: "Leaderboard", href: "/leaderboard", testId: "nav-leaderboard", icon: Trophy },
   ];
 
   const handleLogout = () => {
@@ -40,20 +41,24 @@ export function Navbar() {
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-6">
-            {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`text-sm font-medium transition-colors hover:text-foreground ${
-                  location === item.href
-                    ? "text-foreground"
-                    : "text-muted-foreground"
-                }`}
-                data-testid={item.testId}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navigation.map((item) => {
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`text-sm font-medium transition-colors hover:text-foreground flex items-center gap-1.5 ${
+                    location === item.href
+                      ? "text-foreground"
+                      : "text-muted-foreground"
+                  }`}
+                  data-testid={item.testId}
+                >
+                  {Icon && <Icon className="h-4 w-4" />}
+                  {item.name}
+                </Link>
+              );
+            })}
           </div>
 
           {/* User Menu */}

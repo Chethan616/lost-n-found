@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Item, type InsertItem, type Claim, type InsertClaim, type ItemWithUser, type ClaimWithItem } from "@shared/schema";
+import { type User, type InsertUser, type Item, type InsertItem, type Claim, type InsertClaim, type ItemWithUser, type ClaimWithItem, type Reward, type InsertReward, type Achievement, type InsertAchievement } from "@shared/schema";
 import { randomUUID } from "crypto";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -11,6 +11,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserPoints(userId: string, points: number): Promise<void>;
   
   getItems(filters?: { type?: "lost" | "found"; search?: string; location?: string }): Promise<ItemWithUser[]>;
   getItem(id: string): Promise<ItemWithUser | undefined>;
@@ -24,13 +25,22 @@ export interface IStorage {
   updateClaim(id: string, updates: Partial<Claim>): Promise<void>;
   getUserFailedClaims(userId: string): Promise<number>;
   
+  createReward(reward: InsertReward & { userId: string; relatedItemId?: string; relatedClaimId?: string }): Promise<Reward>;
+  getUserRewards(userId: string, limit?: number): Promise<Reward[]>;
+  getLeaderboard(limit?: number): Promise<User[]>;
+  
+  createAchievement(achievement: InsertAchievement & { userId: string }): Promise<Achievement>;
+  getUserAchievements(userId: string): Promise<Achievement[]>;
+  
   sessionStore: any;
 }
 
 export class MemStorage implements IStorage {
-  private users: Map<string, User>;
-  private items: Map<string, Item>;
-  private claims: Map<string, Claim>;
+  private users = new Map<string, User>();
+  private items = new Map<string, Item>();
+  private claims = new Map<string, Claim>();
+  private rewards = new Map<string, Reward>();
+  private achievements = new Map<string, Achievement>();
   public sessionStore: any;
 
   constructor() {
@@ -59,13 +69,13 @@ export class MemStorage implements IStorage {
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const id = randomUUID();
-    const user: User = { 
-      ...insertUser, 
-      id,
-      createdAt: new Date()
+    const user: User = {
+      id: crypto.randomUUID(),
+      createdAt: new Date(),
+      points: 0,
+      ...insertUser,
     };
-    this.users.set(id, user);
+    this.users.set(user.id, user);
     return user;
   }
 
@@ -204,6 +214,57 @@ export class MemStorage implements IStorage {
       claim => claim.claimerId === userId && claim.status === "rejected"
     );
     return claims.length;
+  }
+
+  async updateUserPoints(userId: string, points: number): Promise<void> {
+    const user = this.users.get(userId);
+    if (user) {
+      this.users.set(userId, { ...user, points: user.points + points });
+    }
+  }
+
+  async createReward(rewardData: InsertReward & { userId: string; relatedItemId?: string; relatedClaimId?: string }): Promise<Reward> {
+    const id = randomUUID();
+    const reward: Reward = {
+      ...rewardData,
+      id,
+      createdAt: new Date(),
+      relatedItemId: rewardData.relatedItemId || null,
+      relatedClaimId: rewardData.relatedClaimId || null
+    };
+    this.rewards.set(id, reward);
+    return reward;
+  }
+
+  async getUserRewards(userId: string, limit?: number): Promise<Reward[]> {
+    let rewards = Array.from(this.rewards.values()).filter(r => r.userId === userId);
+    rewards.sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime());
+    if (limit) {
+      rewards = rewards.slice(0, limit);
+    }
+    return rewards;
+  }
+
+  async getLeaderboard(limit: number = 10): Promise<User[]> {
+    const users = Array.from(this.users.values());
+    users.sort((a, b) => b.points - a.points);
+    return users.slice(0, limit);
+  }
+
+  async createAchievement(achievementData: InsertAchievement & { userId: string }): Promise<Achievement> {
+    const id = randomUUID();
+    const achievement: Achievement = {
+      ...achievementData,
+      id,
+      unlockedAt: new Date()
+    };
+    this.achievements.set(id, achievement);
+    return achievement;
+  }
+
+  async getUserAchievements(userId: string): Promise<Achievement[]> {
+    const achievements = Array.from(this.achievements.values()).filter(a => a.userId === userId);
+    return achievements.sort((a, b) => new Date(b.unlockedAt!).getTime() - new Date(a.unlockedAt!).getTime());
   }
 }
 export const storage = new SqliteStorage();

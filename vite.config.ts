@@ -22,7 +22,7 @@ export default defineConfig({
         ]
       : []),
   ],
-  base:'/lost-n-found/',
+  base: process.env.GITHUB_PAGES ? '/lost-n-found/' : '/',
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -32,7 +32,7 @@ export default defineConfig({
   },
   root: path.resolve(import.meta.dirname, "client"),
   build: {
-    outDir: path.resolve(import.meta.dirname, "dist/public"),
+    outDir: path.resolve(import.meta.dirname, process.env.GITHUB_PAGES ? "dist" : "dist/public"),
     emptyOutDir: true,
   },
   server: {

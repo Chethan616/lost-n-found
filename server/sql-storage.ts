@@ -1,4 +1,4 @@
-import { type User, type InsertUser, type Item, type InsertItem, type Claim, type InsertClaim, type ItemWithUser, type ClaimWithItem, users, items, claims } from "@shared/schema";
+import { type User, type InsertUser, type Item, type InsertItem, type Claim, type InsertClaim, type ItemWithUser, type ClaimWithItem, type Reward, type InsertReward, type Achievement, type InsertAchievement, users, items, claims, rewards, achievements } from "@shared/schema";
 import { randomUUID } from "crypto";
 import session from "express-session";
 import createMemoryStore from "memorystore";
@@ -12,6 +12,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUserPoints(userId: string, points: number): Promise<void>;
   
   getItems(filters?: { type?: "lost" | "found"; search?: string; location?: string }): Promise<ItemWithUser[]>;
   getItem(id: string): Promise<ItemWithUser | undefined>;
@@ -24,6 +25,13 @@ export interface IStorage {
   createClaim(claim: InsertClaim & { claimerId: string }): Promise<Claim>;
   updateClaim(id: string, updates: Partial<Claim>): Promise<void>;
   getUserFailedClaims(userId: string): Promise<number>;
+  
+  createReward(reward: InsertReward & { userId: string; relatedItemId?: string; relatedClaimId?: string }): Promise<Reward>;
+  getUserRewards(userId: string, limit?: number): Promise<Reward[]>;
+  getLeaderboard(limit?: number): Promise<User[]>;
+  
+  createAchievement(achievement: InsertAchievement & { userId: string }): Promise<Achievement>;
+  getUserAchievements(userId: string): Promise<Achievement[]>;
   
   sessionStore: any;
 }
@@ -330,5 +338,86 @@ export class SqliteStorage implements IStorage {
       .where(and(eq(claims.claimerId, userId), eq(claims.status, "rejected")));
     
     return result.length;
+  }
+
+  async updateUserPoints(userId: string, points: number): Promise<void> {
+    const user = await this.getUser(userId);
+    if (user) {
+      await db.update(users).set({ points: user.points + points }).where(eq(users.id, userId));
+    }
+  }
+
+  async createReward(rewardData: InsertReward & { userId: string; relatedItemId?: string; relatedClaimId?: string }): Promise<Reward> {
+    const result = await db.insert(rewards).values({
+      userId: rewardData.userId,
+      type: rewardData.type,
+      points: rewardData.points,
+      description: rewardData.description,
+      relatedItemId: rewardData.relatedItemId || null,
+      relatedClaimId: rewardData.relatedClaimId || null
+    }).returning();
+    
+    const reward = result[0];
+    return {
+      ...reward,
+      createdAt: reward.createdAt as Date | null
+    };
+  }
+
+  async getUserRewards(userId: string, limit?: number): Promise<Reward[]> {
+    let query = db
+      .select()
+      .from(rewards)
+      .where(eq(rewards.userId, userId))
+      .orderBy(desc(rewards.createdAt));
+    
+    if (limit) {
+      query = query.limit(limit) as any;
+    }
+    
+    const result = await query;
+    return result.map(reward => ({
+      ...reward,
+      createdAt: reward.createdAt as Date | null
+    }));
+  }
+
+  async getLeaderboard(limit: number = 10): Promise<User[]> {
+    const result = await db
+      .select()
+      .from(users)
+      .orderBy(desc(users.points))
+      .limit(limit);
+    
+    return result.map(user => ({
+      ...user,
+      createdAt: user.createdAt as Date | null
+    }));
+  }
+
+  async createAchievement(achievementData: InsertAchievement & { userId: string }): Promise<Achievement> {
+    const result = await db.insert(achievements).values({
+      userId: achievementData.userId,
+      type: achievementData.type
+    }).returning();
+    
+    const achievement = result[0];
+    return {
+      ...achievement,
+      unlockedAt: achievement.unlockedAt as Date | null
+    };
+  }
+
+  async getUserAchievements(userId: string): Promise<Achievement[]> {
+    const result = await db
+      .select()
+      .from(achievements)
+      .where(eq(achievements.userId, userId))
+      .orderBy(desc(achievements.unlockedAt));
+    
+    return result.map(achievement => ({
+      ...achievement,
+      unlockedAt: achievement.unlockedAt as Date | null
+    }));
   }
 }

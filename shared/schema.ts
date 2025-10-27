@@ -8,6 +8,7 @@ export const users = sqliteTable("users", {
   username: text("username").notNull().unique(),
   email: text("email").notNull().unique(),
   password: text("password").notNull(),
+  points: integer("points").default(0).notNull(),
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`),
 });
 
@@ -39,6 +40,24 @@ export const claims = sqliteTable("claims", {
   createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`),
 });
 
+export const rewards = sqliteTable("rewards", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  userId: text("user_id").notNull().references(() => users.id),
+  type: text("type", { enum: ["report_found", "report_lost", "claim_approved", "item_reunited", "helped_someone"] }).notNull(),
+  points: integer("points").notNull(),
+  relatedItemId: text("related_item_id").references(() => items.id),
+  relatedClaimId: text("related_claim_id").references(() => claims.id),
+  description: text("description").notNull(),
+  createdAt: integer("created_at", { mode: "timestamp" }).default(sql`(unixepoch())`),
+});
+
+export const achievements = sqliteTable("achievements", {
+  id: text("id").primaryKey().default(sql`(lower(hex(randomblob(16))))`),
+  userId: text("user_id").notNull().references(() => users.id),
+  type: text("type", { enum: ["helper_hero", "detective", "community_star", "first_report", "first_claim"] }).notNull(),
+  unlockedAt: integer("unlocked_at", { mode: "timestamp" }).default(sql`(unixepoch())`),
+});
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
@@ -62,6 +81,16 @@ export const insertClaimSchema = createInsertSchema(claims).pick({
   evidenceImageUrl: true,
 });
 
+export const insertRewardSchema = createInsertSchema(rewards).pick({
+  type: true,
+  points: true,
+  description: true,
+});
+
+export const insertAchievementSchema = createInsertSchema(achievements).pick({
+  type: true,
+});
+
 // Types
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
@@ -69,7 +98,16 @@ export type InsertItem = z.infer<typeof insertItemSchema>;
 export type Item = typeof items.$inferSelect;
 export type InsertClaim = z.infer<typeof insertClaimSchema>;
 export type Claim = typeof claims.$inferSelect;
+export type InsertReward = z.infer<typeof insertRewardSchema>;
+export type Reward = typeof rewards.$inferSelect;
+export type InsertAchievement = z.infer<typeof insertAchievementSchema>;
+export type Achievement = typeof achievements.$inferSelect;
 
 // Extended types for joins
 export type ItemWithUser = Item & { user: User };
 export type ClaimWithItem = Claim & { item: ItemWithUser; claimer: User };
+export type UserWithStats = User & { 
+  recentRewards?: Reward[];
+  achievements?: Achievement[];
+  rank?: number;
+};

@@ -5,12 +5,15 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
+import { hasBackend } from "./lib/config";
+import { BackendUnavailable } from "@/components/backend-unavailable";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import ReportPage from "@/pages/report-page";
 import BrowsePage from "@/pages/browse-page";
 import ClaimsPage from "@/pages/claims-page";
 import DashboardPage from "@/pages/dashboard-page";
+import LeaderboardPage from "@/pages/leaderboard-page";
 import NotFound from "@/pages/not-found";
 
 function Router() {
@@ -21,6 +24,7 @@ function Router() {
       <ProtectedRoute path="/browse" component={BrowsePage} />
       <ProtectedRoute path="/claims" component={ClaimsPage} />
       <ProtectedRoute path="/dashboard" component={DashboardPage} />
+      <ProtectedRoute path="/leaderboard" component={LeaderboardPage} />
       <Route path="/auth" component={AuthPage} />
       <Route component={NotFound} />
     </Switch>
@@ -28,6 +32,15 @@ function Router() {
 }
 
 function App() {
+  // Check if backend is available (not on GitHub Pages)
+  if (!hasBackend) {
+    return (
+      <TooltipProvider>
+        <BackendUnavailable />
+      </TooltipProvider>
+    );
+  }
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>

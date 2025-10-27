@@ -12,7 +12,13 @@ if (process.env.NODE_ENV === 'development') {
     // Note: only set this for local development. In production, strict CSP must be used.
     res.setHeader(
       'Content-Security-Policy',
-      "default-src 'self' 'unsafe-inline' data: blob:; script-src 'self' 'unsafe-eval' 'unsafe-inline'"
+      "default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob:; " +
+      "script-src 'self' 'unsafe-eval' 'unsafe-inline'; " +
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
+      "font-src 'self' data: https://fonts.gstatic.com https://r2cdn.perplexity.ai; " +
+      "frame-src 'self' https://my.spline.design; " +
+      "img-src 'self' data: blob: https:; " +
+      "connect-src 'self' ws: wss: https:"
     );
     next();
   });
@@ -62,9 +68,13 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
+  log(`Environment: NODE_ENV=${process.env.NODE_ENV}, app.get('env')=${app.get("env")}`);
+  
   if (app.get("env") === "development") {
+    log("Setting up Vite dev server...");
     await setupVite(app, server);
   } else {
+    log("Serving static files from dist/public...");
     serveStatic(app);
   }
 

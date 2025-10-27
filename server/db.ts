@@ -1,6 +1,6 @@
 import { drizzle } from "drizzle-orm/better-sqlite3";
 import Database from "better-sqlite3";
-import { users, items, claims } from "@shared/schema";
+import { users, items, claims, rewards, achievements } from "@shared/schema";
 import path from "path";
 import fs from "fs";
 
@@ -12,7 +12,7 @@ const sqlite = new Database(sqlitePath);
 sqlite.pragma("foreign_keys = ON");
 
 // Create drizzle instance
-export const db = drizzle(sqlite, { schema: { users, items, claims } });
+export const db = drizzle(sqlite, { schema: { users, items, claims, rewards, achievements } });
 
 // Run migrations on startup by executing SQL from server/sql/init.sql
 export function initializeDatabase() {
